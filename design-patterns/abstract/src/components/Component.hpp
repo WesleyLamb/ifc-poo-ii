@@ -5,6 +5,7 @@
 
 class Component {
     public:
+        virtual void Draw() = 0;
         std::string Caption;
 };
 

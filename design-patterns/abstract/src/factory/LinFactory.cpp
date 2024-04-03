@@ -1,6 +1,7 @@
 #include "LinFactory.hpp"
 #include "LinButton.hpp"
 
-LinButton* LinFactory::createButton() {
-    return new LinButton();
+Button* LinFactory::createButton() {
+    LinButton* but = new LinButton();
+    return (Button*) &but;
 }

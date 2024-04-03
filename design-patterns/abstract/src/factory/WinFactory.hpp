@@ -4,7 +4,7 @@
 #include "AbstractFactory.hpp"
 
 class WinFactory: AbstractFactory {
-
+    Button* createButton();
 };
 
 #endif

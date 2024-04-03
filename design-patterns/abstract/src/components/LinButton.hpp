@@ -6,7 +6,6 @@
 class LinButton: Button {
     public:
         LinButton();
-        ~LinButton();
         void OnClick();
 };
 

@@ -4,7 +4,7 @@
 #include "AbstractFactory.hpp"
 
 class LinFactory: AbstractFactory {
-    LinButton* createButton();
+    Button* createButton();
 };
 
 #endif
