@@ -3,8 +3,12 @@
 
 #include "AbstractFactory.hpp"
 
-class WinFactory: AbstractFactory {
-    Button* createButton();
+class WinFactory: public AbstractFactory {
+    public:
+        WinFactory();
+        ~WinFactory();
+        Button* createButton() const override;
+        Checkbox* createCheckbox() const override;
 };
 
 #endif

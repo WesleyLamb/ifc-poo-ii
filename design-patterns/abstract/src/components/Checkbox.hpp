@@ -3,8 +3,10 @@
 
 #include "Component.hpp"
 
-class Checkbox: Component {
+class Checkbox: public Component {
     public:
+        Checkbox();
+        ~Checkbox();
         bool checked;
 };
 

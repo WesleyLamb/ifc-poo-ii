@@ -3,10 +3,13 @@
 
 #include "Button.hpp"
 
-class LinButton: Button {
+class LinButton: public Button {
     public:
         LinButton();
-        void OnClick();
+        ~LinButton();
+        void onClick();
+        void draw();
+        std::string caption;
 };
 
 #endif

@@ -4,9 +4,11 @@
 #include "Component.hpp"
 #include <string>
 
-class Button: Component {
+class Button: public Component {
     public:
-        virtual void OnClick() = 0;
+        Button();
+        ~Button();
+        virtual void onClick() = 0;
 };
 
 #endif

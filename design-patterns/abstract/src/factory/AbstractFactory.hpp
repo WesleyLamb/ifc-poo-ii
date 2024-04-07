@@ -5,8 +5,11 @@
 #include "../components/Checkbox.hpp"
 
 class AbstractFactory {
-    virtual Button* createButton() = 0;
-    virtual Checkbox* createCheckbox() = 0;
+    public:
+    AbstractFactory();
+    ~AbstractFactory();
+        virtual Button* createButton() const = 0;
+        virtual Checkbox* createCheckbox() const = 0;
 };
 
 #endif

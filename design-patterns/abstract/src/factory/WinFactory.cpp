@@ -1,8 +1,18 @@
 #include "WinFactory.hpp"
 #include "../components/WinButton.hpp"
+#include "../components/WinCheckbox.hpp"
 
-Button *WinFactory::createButton()
+WinFactory::WinFactory(): AbstractFactory() { }
+
+WinFactory::~WinFactory() { }
+
+Button *WinFactory::createButton() const
 {
     WinButton* but = new WinButton();
-    return (Button*) but;
+    return but;
+}
+
+Checkbox* WinFactory::createCheckbox() const {
+    WinCheckbox* chk = new WinCheckbox();
+    return chk;
 }

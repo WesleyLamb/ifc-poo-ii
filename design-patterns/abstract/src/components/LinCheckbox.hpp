@@ -3,9 +3,11 @@
 
 #include "Checkbox.hpp"
 
-class LinCheckbox: Checkbox {
+class LinCheckbox: public Checkbox {
     public:
-        void Draw();
+        LinCheckbox();
+        ~LinCheckbox();
+        void draw();
 };
 
 #endif

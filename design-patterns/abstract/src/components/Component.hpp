@@ -5,8 +5,10 @@
 
 class Component {
     public:
-        virtual void Draw() = 0;
-        std::string Caption;
+        Component();
+        ~Component();
+        virtual void draw() = 0;
+        std::string caption;
 };
 
 #endif

@@ -3,10 +3,12 @@
 
 #include "Button.hpp"
 
-class WinButton: Button {
+class WinButton: public Button {
     public:
         WinButton();
-        void OnClick();
+        ~WinButton();
+        void onClick();
+        void draw();
 };
 
 #endif
