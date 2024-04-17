@@ -3,11 +3,11 @@
 #include <string>
 #include <iostream>
 
-void Sistema::carregarLeitor(LeitorJson *aLeitor) {
+void Sistema::carregarLeitor(LeitorXML *aLeitor) {
     this->leitor = aLeitor;
 }
 
-void Sistema::importar(std::string aJsonPath) {
-    std::cout << "Importando arquivo: " << aJsonPath << std::endl;
-    this->leitor->importar(aJsonPath);
+void Sistema::importar(std::string aXMLPath) {
+    std::cout << "Importando arquivo: " << aXMLPath << std::endl;
+    this->leitor->importar(aXMLPath);
 }

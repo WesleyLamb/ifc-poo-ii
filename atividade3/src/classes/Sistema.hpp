@@ -2,14 +2,14 @@
 #define Sistema_hpp
 
 #include <string>
-#include "../classes/LeitorJson.hpp"
+#include "../classes/LeitorXML.hpp"
 
 class Sistema {
     private:
-        LeitorJson* leitor;
+        LeitorXML* leitor;
     public:
-        void carregarLeitor(LeitorJson* aLeitor);
-        void importar(std::string aJsonPath);
+        void carregarLeitor(LeitorXML* aLeitor);
+        void importar(std::string aXMLPath);
 };
 
 #endif

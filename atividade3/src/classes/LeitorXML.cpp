@@ -1,5 +1,8 @@
 #include "LeitorXML.hpp"
 
-void LeitorXML::importar(std::string aPath) {
+#include <string>
+#include <iostream>
 
+void LeitorXML::importar(std::string aPath) {
+    std::cout << "lalala estou importando um xml: " << aPath << std::endl;
 }

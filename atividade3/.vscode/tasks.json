@@ -9,7 +9,6 @@
                 "-g",
                 "${workspaceFolder}/src/adapter/*.cpp",
                 "${workspaceFolder}/src/classes/*.cpp",
-                "${workspaceFolder}/src/interfaces/*.cpp",
                 "${workspaceFolder}/main.cpp",
                 "-o",
                 "${workspaceFolder}/main"
