@@ -7,11 +7,11 @@
 
 class ComplexTask: public Task{
     public:
-        ComplexTask(std::string aTitulo, std::string aDescricao, std::list<Task> aTasks);
-        ~ComplexTask();
-        std::list<Task> subTasks;
+        ComplexTask(std::string aTitulo, std::string aDescricao);
+        std::list<Task*> subTasks;
 
         void print(std::string preText) override;
+        void addSubTask(Task *task);
 };
 
 #endif

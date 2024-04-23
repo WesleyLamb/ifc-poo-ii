@@ -1,6 +1,7 @@
 #include "SimpleTask.hpp"
 
 #include <iostream>
+#include <string>
 
 SimpleTask::SimpleTask(std::string atitulo, std::string aDescricao): Task(atitulo, aDescricao)
 {
@@ -9,5 +10,5 @@ SimpleTask::SimpleTask(std::string atitulo, std::string aDescricao): Task(atitul
 void SimpleTask::print(std::string preText)
 {
     std::cout << preText << "SimpleTask: " << this->titulo << std::endl;
-    std::cout << preText << "SimpleTask: " << this->descricao << std::endl;
+    std::cout << preText << "Description: " << this->descricao << std::endl;
 }
