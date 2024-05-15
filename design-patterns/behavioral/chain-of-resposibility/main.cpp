@@ -9,12 +9,12 @@ void init(Server* aServer) {
     aServer->registerUser(new User("wesley@lamb.com", "123", true));
     aServer->registerUser(new User("wesley@lomb.com.br", "1234"));
 
-    Middleware* middleware = Middleware::link(
+    Middleware* middleware = Middleware::link({
         new ThrottlingMiddleware(2),
         new UserAllowedMiddleware(".br"),
         new UserExistsMiddleware(aServer),
         new RoleCheckMiddleware()
-    );
+    });
 
     aServer->setMiddleware(middleware);
 }

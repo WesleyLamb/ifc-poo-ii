@@ -1,11 +1,11 @@
 #include "Middleware.hpp"
+#include <initializer_list>
 
-void Middleware::link(Middleware *first, Middleware *middlewares...) {
-    
+void Middleware::link(std::initializer_list<Middleware*> middlewares) {
+    auto middleware = middlewares.begin();
+    while (NULL != middleware) {
 
 
-    for (middlewares::iterator it = subTasks.begin(); it != subTasks.end(); ++it) {
-        (*it)->print(preText + "| ");
     }
 }
 
