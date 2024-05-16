@@ -6,21 +6,15 @@
 #include "src/AuthorizationMiddleware.hpp"
 #include "src/AvailableLimitMiddleware.hpp"
 
-Middleware* middlewares = NULL;
-int middlewaresLength = 0;
-
 void init(Bank* aBank) {
-    aBank->registerUser(new BankUser("Wesley R. Lamb", "1234"));
-    aBank->registerUser(new BankUser("Mano Valdas", "3210"));
+    aBank->registerUser(new BankUser("Wesley R. Lamb", "180017", "1234"));
+    aBank->registerUser(new BankUser("Mano Valdas", "180028", "3210"));
 
-    middlewares = malloc(sizeof(Middleware) * 5);
-    int i = 0;
-    middlewares[i++] = new AuthenticateMiddleware(aBank);
-    middlewares[i++] = new AuthorizationMiddleware();
-    middlewares[i++] = new AvailableLimitMiddleware(5000);
-    middlewaresLength = i;
-
-    aBank->link(middlewares);
+    aBank->link(
+        new AuthenticateMiddleware(aBank),
+        new AuthorizationMiddleware(),
+        new AvailableLimitMiddleware(5000)
+    );
 }
 
 int main() {
@@ -33,11 +27,14 @@ int main() {
     do {
         std::cout << "Informe o nome de usuário: " << std::endl;
         std::cin >> username;
+        getchar();
         std::cout << "Informe a senha: " << std::endl;
         std::cin >> password;
+        getchar();
         std::cout << "Informe o valor para empréstimo: " << std::endl;
-        std::cin >> value;
-        success = banco->askLoan(username, password, value);
+        std::cin >> loan;
+        getchar();
+        success = banco->askLoan(username, password, loan);
     } while(!success);
 
     delete banco;

@@ -10,12 +10,11 @@ AuthenticateMiddleware::AuthenticateMiddleware(Bank *aBank)
     this->bank = aBank;
 }
 
-bool AuthenticateMiddleware::check(std::string anUsername, std::string aPassword, float value)
+bool AuthenticateMiddleware::check(std::string anAccount, std::string aPassword, float value)
 {
     bool authenticated = false;
-    // std::li<st<BankUser*>::iterator it;
-    for (auto it = this->bank->getUsers().begin(); it != this->bank->getUsers().end(); ++it){
-        if ((it->username == anUsername) && (it->password == aPassword)) {
+    for (std::list<BankUser*>::iterator it = this->bank->getUsers().begin(); it != this->bank->getUsers().end(); ++it) {
+        if (((*it)->getAccount() == anAccount) && ((*it)->getPassword() == aPassword)) {
             authenticated == true;
             break;
         }
@@ -27,5 +26,5 @@ bool AuthenticateMiddleware::check(std::string anUsername, std::string aPassword
 
     if (NULL == this->next)
         return true;
-    return this->next->check(anUsername, aPassword, value);
+    return this->next->check(anAccount, aPassword, value);
 }

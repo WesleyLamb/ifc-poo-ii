@@ -11,7 +11,7 @@ class Bank {
         Middleware* middleware;
     public:
         void registerUser(BankUser* anUser);
-        void link(Middleware* aMiddleware);
+        void link(Middleware *firstMiddleware, Middleware* middlewares...);
         bool askLoan(std::string username, std::string password, float value);
         std::list<BankUser*> getUsers();
 };

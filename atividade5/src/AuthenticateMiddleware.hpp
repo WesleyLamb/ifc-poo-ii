@@ -9,7 +9,7 @@ class AuthenticateMiddleware: public Middleware {
         Bank* bank;
     public:
         AuthenticateMiddleware(Bank* aBank);
-        bool check(std::string anUsername, std::string aPassword, float value);
+        bool check(std::string anAccount, std::string aPassword, float value);
 };
 
 #endif

@@ -1,7 +1,23 @@
 #include "BankUser.hpp"
 
-BankUser::BankUser(std::string anUserName, std::string aPassword)
+BankUser::BankUser(std::string aName, std::string anAccount, std::string aPassword)
 {
-    this->username = anUserName;
+    this->name = aName;
+    this->account = anAccount;
     this->password = aPassword;
+}
+
+std::string BankUser::getAccount()
+{
+    return this->account;
+}
+
+std::string BankUser::getName()
+{
+    return this->name;
+}
+
+std::string BankUser::getPassword()
+{
+    return this->password;
 }

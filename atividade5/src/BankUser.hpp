@@ -5,10 +5,14 @@
 
 class BankUser{
     private:
-        std::string username;
+        std::string name;
+        std::string account;
         std::string password;
     public:
-        BankUser(std::string anUserName, std::string aPassword);
+        BankUser(std::string aName, std::string anAccount, std::string aPassword);
+        std::string getName();
+        std::string getAccount();
+        std::string getPassword();
 };
 
 #endif
