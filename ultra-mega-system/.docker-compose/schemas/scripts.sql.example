@@ -1,0 +1,18 @@
+CREATE DATABASE IF NOT EXISTS `ums` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci */;
+
+use `ums`;
+
+CREATE TABLE `clientes` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `nome` varchar(100) NOT NULL,
+  `sobrenome` varchar(100) NOT NULL,
+  `criado_em` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+INSERT INTO ums.clientes
+(id, nome, sobrenome, criado_em)
+VALUES(1, 'Wesley Ricardo', 'Lamb', '2024-06-09 14:20:56.000');
+INSERT INTO ums.clientes
+(id, nome, sobrenome, criado_em)
+VALUES(2, 'Valdir', 'Rugiski Jr', '2024-06-09 14:21:12.000');
