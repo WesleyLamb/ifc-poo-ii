@@ -17,9 +17,9 @@ MySQLConnection::MySQLConnection(ConnectionParams *aConnectionParams)
 {
     /* Create a connection */
     this->_driver = get_driver_instance();
-    this->_con = this->_driver->connect(this->createConnectionString(aConnectionParams), "painel", "yametekudasai");
+    this->_con = this->_driver->connect(this->createConnectionString(aConnectionParams), aConnectionParams->getUsername(), aConnectionParams->getPassword());
     /* Connect to the MySQL test database */
-    this->_con->setSchema("ums");
+    this->_con->setSchema(aConnectionParams->getDatabase());
     // std::cout << "Conexão estabelecida" << std::endl;
 }
 

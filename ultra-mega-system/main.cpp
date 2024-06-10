@@ -47,7 +47,7 @@ int main() {
 
 
     DatabaseManager* dbm = DatabaseManager::getInstance(new ConnectionParams(
-            Driver::MYSQL, "localhost", 3307, "ums", "painel", "yametekudasai"
+            Driver::MYSQL, "localhost", 3308, "ums", "root", "yametekudasai"
         )
     );
     dbm->clientes->getById(1);
