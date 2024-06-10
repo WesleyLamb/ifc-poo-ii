@@ -1,11 +1,12 @@
 #include <iostream>
 
-using namespace std;
-
 #include "src/database/DatabaseManager.hpp"
 #include "src/database/ConnectionParams.hpp"
 #include "src/database/types/Driver.hpp"
 #include "src/database/models/Clientes.hpp"
+#include "src/database/exceptions/IllegalFunctionCallException.hpp"
+
+#include "src/gui/GuiManager.hpp"
 
 #include <cppconn/driver.h>
 #include <cppconn/exception.h>
@@ -45,13 +46,33 @@ int main() {
     // Formas de pagamento (Dinheiro, Cartão, Parcelamento)
     // Botão finalizar
 
+    /* Conexão com o BD */
+    // DatabaseManager* dbm;
+    try {
+        DatabaseManager::getInstance(new ConnectionParams(
+                Driver::MYSQL, "localhost", 3308, "ums", "root", "yametekudasai"
+            )
+        );
+    } catch (IllegalFunctionCallException &e) {
+        std::cout << "# ERR: IllegalFunctionCallException in " << __FILE__;
+        std::cout << "(" << __FUNCTION__ << ") on line " << __LINE__ << std::endl;
+        std::cout << "# ERR: " << e.what();
+        return 1;
+    } catch (sql::SQLException &e) {
+        std::cout << "# ERR: SQLException in " << __FILE__;
+        std::cout << "(" << __FUNCTION__ << ") on line " << __LINE__ << std::endl;
+        std::cout << "# ERR: " << e.what();
+        std::cout << " (MySQL error code: " << e.getErrorCode();
+        std::cout << ", SQLState: " << e.getSQLState() << ")" << std::endl;
+        return 1;
+    };
 
-    DatabaseManager* dbm = DatabaseManager::getInstance(new ConnectionParams(
-            Driver::MYSQL, "localhost", 3308, "ums", "root", "yametekudasai"
-        )
-    );
-    dbm->clientes->getById(1);
-    std::cout << dbm->clientes->dataSet->getString("nome") << " " << dbm->clientes->dataSet->getString("sobrenome") << std::endl;
+    GuiManager::getInstance();
+
+    // dbm->clientes->open("select * from clientes");
+    // do {
+    //     std::cout << dbm->clientes->dataSet->getString("nome") << " " << dbm->clientes->dataSet->getString("sobrenome") << std::endl;
+    // } while (dbm->clientes->dataSet->next());
 
     // cout << endl;
     // cout << "Running SELECT 'Hello World!' AS _message" << endl;

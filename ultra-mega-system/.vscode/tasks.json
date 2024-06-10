@@ -12,7 +12,13 @@
                 "${workspaceFolder}/src/database/mysql/*.cpp",
                 "${workspaceFolder}/src/database/exceptions/*.cpp",
                 "${workspaceFolder}/src/database/*.cpp",
+                "${workspaceFolder}/src/gui/imgui/*.cpp",
+                "${workspaceFolder}/src/gui/exceptions/*.cpp",
+                "${workspaceFolder}/src/gui/*.cpp",
+                "${workspaceFolder}/src/exceptions/*.cpp",
                 "-lmysqlcppconn",
+                "-lvulkan",
+                "-lglfw3",
                 "-o",
                 "${workspaceFolder}/main"
             ],

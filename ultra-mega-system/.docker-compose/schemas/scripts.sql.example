@@ -2,17 +2,34 @@ CREATE DATABASE IF NOT EXISTS `ums` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLA
 
 use `ums`;
 
-CREATE TABLE `clientes` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `nome` varchar(100) NOT NULL,
-  `sobrenome` varchar(100) NOT NULL,
-  `criado_em` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+-- ums.clientes definition
 
-INSERT INTO ums.clientes
-(id, nome, sobrenome, criado_em)
-VALUES(1, 'Wesley Ricardo', 'Lamb', '2024-06-09 14:20:56.000');
-INSERT INTO ums.clientes
-(id, nome, sobrenome, criado_em)
-VALUES(2, 'Valdir', 'Rugiski Jr', '2024-06-09 14:21:12.000');
+CREATE TABLE `clientes` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `nome` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `sobrenome` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `data_nascimento` date DEFAULT NULL,
+  `cpf` char(11) COLLATE utf8mb4_general_ci NOT NULL,
+  `criado_em` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `atualizado_em` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `clientes_unique` (`cpf`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+INSERT INTO ums.clientes (id, nome, data_nascimento, cpf, criado_em, atualizado_em) VALUES (1, 'NÃO IDENTIFICADO', '2001-01-01', '00000000000', '2024-06-10 14:39:25', '2024-06-10 14:39:31');
+
+-- ums.produtos definition
+
+CREATE TABLE `produtos` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `descricao` varchar(200) COLLATE utf8mb4_general_ci NOT NULL,
+  `preco_custo` decimal(15,4) NOT NULL,
+  `preco_venda` decimal(15,4) NOT NULL,
+  `codigo_barras` varchar(20) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `referencia_interna` varchar(20) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `criado_em` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `atualizado_em` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+INSERT INTO ums.produtos (id, descricao, preco_custo, preco_venda, codigo_barras, referencia_interna, criado_em, atualizado_em) VALUES (1, 'Cachaça 51', 20.0000, 50.0000, '7896002111713', NULL, '2024-06-10 14:53:18', '2024-06-10 14:53:18');
