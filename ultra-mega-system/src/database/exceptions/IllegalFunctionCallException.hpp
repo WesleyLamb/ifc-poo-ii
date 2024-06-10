@@ -1,7 +1,7 @@
 #ifndef IllegalFunctionCallException_hpp
 #define IllegalFunctionCallException_hpp
 
-#include "BaseException.hpp"
+#include "../../exceptions/BaseException.hpp"
 #include <string>
 
 class IllegalFunctionCallException: public BaseException {

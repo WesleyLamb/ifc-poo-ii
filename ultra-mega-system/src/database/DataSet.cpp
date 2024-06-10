@@ -20,3 +20,8 @@ void DataSet::populate(ResultSetInterface *res)
     delete this->_resultSet;
     this->_resultSet = res;
 }
+
+bool DataSet::next()
+{
+    return this->_resultSet->next();;
+}

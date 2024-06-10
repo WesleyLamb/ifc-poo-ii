@@ -1,6 +1,5 @@
 #include "DatabaseException.hpp"
 
-DatabaseException::DatabaseException(std::string aMessage)
-{
-    this->message = aMessage;
-}
+#include "../../exceptions/BaseException.hpp"
+
+DatabaseException::DatabaseException(std::string aMessage): BaseException(aMessage) { }

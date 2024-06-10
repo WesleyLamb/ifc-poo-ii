@@ -13,6 +13,7 @@ class MySQLResultSetAdapter: public ResultSetInterface {
         std::string getString(std::string aFieldName);
         int getInt(std::string aFieldName);
         int getInt(int anIndex);
+        bool next();
 };
 
 #endif

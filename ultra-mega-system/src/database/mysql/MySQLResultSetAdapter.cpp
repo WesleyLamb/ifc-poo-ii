@@ -20,3 +20,8 @@ int MySQLResultSetAdapter::getInt(int anIndex)
 {
     return this->_mySQLResultSet->getInt(anIndex);
 }
+
+bool MySQLResultSetAdapter::next()
+{
+    return this->_mySQLResultSet->next();
+}

@@ -1,12 +1,10 @@
 #ifndef DatabaseException_hpp
 #define DatabaseException_hpp
 
-#include <exception>
+#include "../../exceptions/BaseException.hpp"
 #include <string>
 
-class DatabaseException: std::exception {
-    private:
-        std::string message;
+class DatabaseException: BaseException {
     public:
         DatabaseException(std::string aMessage);
 };

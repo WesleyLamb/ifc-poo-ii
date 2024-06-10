@@ -12,6 +12,7 @@ class DataSet {
         int getInt(std::string aFieldName);
         int getInt(int anIndex);
         void populate(ResultSetInterface* res);
+        bool next();
 };
 
 #endif
