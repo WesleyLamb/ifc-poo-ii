@@ -1,4 +1,4 @@
-#include "GuiManager.hpp"
+#include "FormManager.hpp"
 
 #include "imgui/imgui_impl_glfw.h"
 #include "exceptions/GuiException.hpp"
@@ -6,29 +6,16 @@
 #include <vulkan/vulkan.h>
 #include <iostream>
 #include "imgui/imgui.h"
+#include "forms/FormPrincipal.hpp"
 
-VkAllocationCallbacks*   GuiManager::g_Allocator = nullptr;
-VkInstance               GuiManager::g_Instance = VK_NULL_HANDLE;
-VkPhysicalDevice         GuiManager::g_PhysicalDevice = VK_NULL_HANDLE;
-VkDevice                 GuiManager::g_Device = VK_NULL_HANDLE;
-uint32_t                 GuiManager::g_QueueFamily = (uint32_t)-1;
-VkQueue                  GuiManager::g_Queue = VK_NULL_HANDLE;
-VkDebugReportCallbackEXT GuiManager::g_DebugReport = VK_NULL_HANDLE;
-VkPipelineCache          GuiManager::g_PipelineCache = VK_NULL_HANDLE;
-VkDescriptorPool         GuiManager::g_DescriptorPool = VK_NULL_HANDLE;
+FormManager* FormManager::_instance = nullptr;
 
-ImGui_ImplVulkanH_Window GuiManager::g_MainWindowData;
-int                      GuiManager::g_MinImageCount = 2;
-bool                     GuiManager::g_SwapChainRebuild = false;
-
-GuiManager* GuiManager::_instance = nullptr;
-
-void GuiManager::exceptionCallback(int error, const char *description)
+void FormManager::exceptionCallback(int error, const char *description)
 {
     std::cerr << "GLFW Error " << error << ":" << description << std::endl;
 }
 
-void GuiManager::SetupVulkan(ImVector<const char *> instance_extensions)
+void FormManager::SetupVulkan(ImVector<const char *> instance_extensions)
 {
     VkResult err;
     #ifdef IMGUI_IMPL_VULKAN_USE_VOLK
@@ -70,7 +57,7 @@ void GuiManager::SetupVulkan(ImVector<const char *> instance_extensions)
             // Create Vulkan Instance
             create_info.enabledExtensionCount = (uint32_t)instance_extensions.Size;
             create_info.ppEnabledExtensionNames = instance_extensions.Data;
-            err = vkCreateInstance(&create_info, g_Allocator, &g_Instance);
+            err = vkCreateInstance(&create_info, _allocator, &this->_vkInstance);
             check_vk_result(err);
     #ifdef IMGUI_IMPL_VULKAN_USE_VOLK
             volkLoadInstance(g_Instance);
@@ -91,22 +78,22 @@ void GuiManager::SetupVulkan(ImVector<const char *> instance_extensions)
         }
 
         // Select Physical Device (GPU)
-        g_PhysicalDevice = SetupVulkan_SelectPhysicalDevice();
+        _physicalDevice = SetupVulkan_SelectPhysicalDevice();
 
         // Select graphics queue family
         {
             uint32_t count;
-            vkGetPhysicalDeviceQueueFamilyProperties(g_PhysicalDevice, &count, nullptr);
+            vkGetPhysicalDeviceQueueFamilyProperties(_physicalDevice, &count, nullptr);
             VkQueueFamilyProperties* queues = (VkQueueFamilyProperties*)malloc(sizeof(VkQueueFamilyProperties) * count);
-            vkGetPhysicalDeviceQueueFamilyProperties(g_PhysicalDevice, &count, queues);
+            vkGetPhysicalDeviceQueueFamilyProperties(_physicalDevice, &count, queues);
             for (uint32_t i = 0; i < count; i++)
                 if (queues[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
                 {
-                    g_QueueFamily = i;
+                    _queueFamily = i;
                     break;
                 }
             free(queues);
-            IM_ASSERT(g_QueueFamily != (uint32_t)-1);
+            IM_ASSERT(_queueFamily != (uint32_t)-1);
         }
 
         // Create Logical Device (with 1 queue)
@@ -117,9 +104,9 @@ void GuiManager::SetupVulkan(ImVector<const char *> instance_extensions)
             // Enumerate physical device extension
             uint32_t properties_count;
             ImVector<VkExtensionProperties> properties;
-            vkEnumerateDeviceExtensionProperties(g_PhysicalDevice, nullptr, &properties_count, nullptr);
+            vkEnumerateDeviceExtensionProperties(_physicalDevice, nullptr, &properties_count, nullptr);
             properties.resize(properties_count);
-            vkEnumerateDeviceExtensionProperties(g_PhysicalDevice, nullptr, &properties_count, properties.Data);
+            vkEnumerateDeviceExtensionProperties(_physicalDevice, nullptr, &properties_count, properties.Data);
     #ifdef VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME
             if (IsExtensionAvailable(properties, VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME))
                 device_extensions.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
@@ -128,7 +115,7 @@ void GuiManager::SetupVulkan(ImVector<const char *> instance_extensions)
             const float queue_priority[] = { 1.0f };
             VkDeviceQueueCreateInfo queue_info[1] = {};
             queue_info[0].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-            queue_info[0].queueFamilyIndex = g_QueueFamily;
+            queue_info[0].queueFamilyIndex = _queueFamily;
             queue_info[0].queueCount = 1;
             queue_info[0].pQueuePriorities = queue_priority;
             VkDeviceCreateInfo create_info = {};
@@ -137,9 +124,9 @@ void GuiManager::SetupVulkan(ImVector<const char *> instance_extensions)
             create_info.pQueueCreateInfos = queue_info;
             create_info.enabledExtensionCount = (uint32_t)device_extensions.Size;
             create_info.ppEnabledExtensionNames = device_extensions.Data;
-            err = vkCreateDevice(g_PhysicalDevice, &create_info, g_Allocator, &g_Device);
+            err = vkCreateDevice(_physicalDevice, &create_info, _allocator, &_device);
             check_vk_result(err);
-            vkGetDeviceQueue(g_Device, g_QueueFamily, 0, &g_Queue);
+            vkGetDeviceQueue(_device, _queueFamily, 0, &_queue);
         }
 
         // Create Descriptor Pool
@@ -156,12 +143,12 @@ void GuiManager::SetupVulkan(ImVector<const char *> instance_extensions)
             pool_info.maxSets = 1;
             pool_info.poolSizeCount = (uint32_t)IM_ARRAYSIZE(pool_sizes);
             pool_info.pPoolSizes = pool_sizes;
-            err = vkCreateDescriptorPool(g_Device, &pool_info, g_Allocator, &g_DescriptorPool);
+            err = vkCreateDescriptorPool(_device, &pool_info, _allocator, &_descriptorPool);
             check_vk_result(err);
         }
 }
 
-void GuiManager::check_vk_result(VkResult err)
+void FormManager::check_vk_result(VkResult err)
 {
     if (err == 0)
         return;
@@ -170,7 +157,7 @@ void GuiManager::check_vk_result(VkResult err)
         abort();
 }
 
-bool GuiManager::IsExtensionAvailable(const ImVector<VkExtensionProperties> &properties, const char *extension)
+bool FormManager::IsExtensionAvailable(const ImVector<VkExtensionProperties> &properties, const char *extension)
 {
     for (const VkExtensionProperties& p : properties)
         if (strcmp(p.extensionName, extension) == 0)
@@ -178,16 +165,16 @@ bool GuiManager::IsExtensionAvailable(const ImVector<VkExtensionProperties> &pro
     return false;
 }
 
-VkPhysicalDevice GuiManager::SetupVulkan_SelectPhysicalDevice()
+VkPhysicalDevice FormManager::SetupVulkan_SelectPhysicalDevice()
 {
     uint32_t gpu_count;
-    VkResult err = vkEnumeratePhysicalDevices(g_Instance, &gpu_count, nullptr);
+    VkResult err = vkEnumeratePhysicalDevices(this->_vkInstance, &gpu_count, nullptr);
     check_vk_result(err);
     IM_ASSERT(gpu_count > 0);
 
     ImVector<VkPhysicalDevice> gpus;
     gpus.resize(gpu_count);
-    err = vkEnumeratePhysicalDevices(g_Instance, &gpu_count, gpus.Data);
+    err = vkEnumeratePhysicalDevices(this->_vkInstance, &gpu_count, gpus.Data);
     check_vk_result(err);
 
     // If a number >1 of GPUs got reported, find discrete GPU if present, or use first one available. This covers
@@ -207,13 +194,13 @@ VkPhysicalDevice GuiManager::SetupVulkan_SelectPhysicalDevice()
     return VK_NULL_HANDLE;
 }
 
-void GuiManager::SetupVulkanWindow(ImGui_ImplVulkanH_Window *wd, VkSurfaceKHR surface, int width, int height)
+void FormManager::SetupVulkanWindow(ImGui_ImplVulkanH_Window *wd, VkSurfaceKHR surface, int width, int height)
 {
-        wd->Surface = surface;
+    wd->Surface = surface;
 
     // Check for WSI support
     VkBool32 res;
-    vkGetPhysicalDeviceSurfaceSupportKHR(g_PhysicalDevice, g_QueueFamily, wd->Surface, &res);
+    vkGetPhysicalDeviceSurfaceSupportKHR(_physicalDevice, _queueFamily, wd->Surface, &res);
     if (res != VK_TRUE)
     {
         fprintf(stderr, "Error no WSI support on physical device 0\n");
@@ -223,7 +210,7 @@ void GuiManager::SetupVulkanWindow(ImGui_ImplVulkanH_Window *wd, VkSurfaceKHR su
     // Select Surface Format
     const VkFormat requestSurfaceImageFormat[] = { VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_B8G8R8_UNORM, VK_FORMAT_R8G8B8_UNORM };
     const VkColorSpaceKHR requestSurfaceColorSpace = VK_COLORSPACE_SRGB_NONLINEAR_KHR;
-    wd->SurfaceFormat = ImGui_ImplVulkanH_SelectSurfaceFormat(g_PhysicalDevice, wd->Surface, requestSurfaceImageFormat, (size_t)IM_ARRAYSIZE(requestSurfaceImageFormat), requestSurfaceColorSpace);
+    wd->SurfaceFormat = ImGui_ImplVulkanH_SelectSurfaceFormat(_physicalDevice, wd->Surface, requestSurfaceImageFormat, (size_t)IM_ARRAYSIZE(requestSurfaceImageFormat), requestSurfaceColorSpace);
 
     // Select Present Mode
 #ifdef APP_USE_UNLIMITED_FRAME_RATE
@@ -231,38 +218,38 @@ void GuiManager::SetupVulkanWindow(ImGui_ImplVulkanH_Window *wd, VkSurfaceKHR su
 #else
     VkPresentModeKHR present_modes[] = { VK_PRESENT_MODE_FIFO_KHR };
 #endif
-    wd->PresentMode = ImGui_ImplVulkanH_SelectPresentMode(g_PhysicalDevice, wd->Surface, &present_modes[0], IM_ARRAYSIZE(present_modes));
+    wd->PresentMode = ImGui_ImplVulkanH_SelectPresentMode(_physicalDevice, wd->Surface, &present_modes[0], IM_ARRAYSIZE(present_modes));
     //printf("[vulkan] Selected PresentMode = %d\n", wd->PresentMode);
 
     // Create SwapChain, RenderPass, Framebuffer, etc.
-    IM_ASSERT(g_MinImageCount >= 2);
-    ImGui_ImplVulkanH_CreateOrResizeWindow(g_Instance, g_PhysicalDevice, g_Device, wd, g_QueueFamily, g_Allocator, width, height, g_MinImageCount);
+    IM_ASSERT(_minImageCount >= 2);
+    ImGui_ImplVulkanH_CreateOrResizeWindow(this->_vkInstance, _physicalDevice, _device, wd, _queueFamily, _allocator, width, height, _minImageCount);
 }
 
-void GuiManager::FrameRender(ImGui_ImplVulkanH_Window *wd, ImDrawData *draw_data)
+void FormManager::FrameRender(ImGui_ImplVulkanH_Window *wd, ImDrawData *draw_data)
 {
     VkResult err;
 
     VkSemaphore image_acquired_semaphore  = wd->FrameSemaphores[wd->SemaphoreIndex].ImageAcquiredSemaphore;
     VkSemaphore render_complete_semaphore = wd->FrameSemaphores[wd->SemaphoreIndex].RenderCompleteSemaphore;
-    err = vkAcquireNextImageKHR(g_Device, wd->Swapchain, UINT64_MAX, image_acquired_semaphore, VK_NULL_HANDLE, &wd->FrameIndex);
+    err = vkAcquireNextImageKHR(_device, wd->Swapchain, UINT64_MAX, image_acquired_semaphore, VK_NULL_HANDLE, &wd->FrameIndex);
     if (err == VK_ERROR_OUT_OF_DATE_KHR || err == VK_SUBOPTIMAL_KHR)
     {
-        g_SwapChainRebuild = true;
+        _swapChainRebuild = true;
         return;
     }
     check_vk_result(err);
 
     ImGui_ImplVulkanH_Frame* fd = &wd->Frames[wd->FrameIndex];
     {
-        err = vkWaitForFences(g_Device, 1, &fd->Fence, VK_TRUE, UINT64_MAX);    // wait indefinitely instead of periodically checking
+        err = vkWaitForFences(_device, 1, &fd->Fence, VK_TRUE, UINT64_MAX);    // wait indefinitely instead of periodically checking
         check_vk_result(err);
 
-        err = vkResetFences(g_Device, 1, &fd->Fence);
+        err = vkResetFences(_device, 1, &fd->Fence);
         check_vk_result(err);
     }
     {
-        err = vkResetCommandPool(g_Device, fd->CommandPool, 0);
+        err = vkResetCommandPool(_device, fd->CommandPool, 0);
         check_vk_result(err);
         VkCommandBufferBeginInfo info = {};
         info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -301,14 +288,14 @@ void GuiManager::FrameRender(ImGui_ImplVulkanH_Window *wd, ImDrawData *draw_data
 
         err = vkEndCommandBuffer(fd->CommandBuffer);
         check_vk_result(err);
-        err = vkQueueSubmit(g_Queue, 1, &info, fd->Fence);
+        err = vkQueueSubmit(_queue, 1, &info, fd->Fence);
         check_vk_result(err);
     }
 }
 
-void GuiManager::FramePresent(ImGui_ImplVulkanH_Window *wd)
+void FormManager::FramePresent(ImGui_ImplVulkanH_Window *wd)
 {
-    if (g_SwapChainRebuild)
+    if (_swapChainRebuild)
         return;
     VkSemaphore render_complete_semaphore = wd->FrameSemaphores[wd->SemaphoreIndex].RenderCompleteSemaphore;
     VkPresentInfoKHR info = {};
@@ -318,24 +305,24 @@ void GuiManager::FramePresent(ImGui_ImplVulkanH_Window *wd)
     info.swapchainCount = 1;
     info.pSwapchains = &wd->Swapchain;
     info.pImageIndices = &wd->FrameIndex;
-    VkResult err = vkQueuePresentKHR(g_Queue, &info);
+    VkResult err = vkQueuePresentKHR(_queue, &info);
     if (err == VK_ERROR_OUT_OF_DATE_KHR || err == VK_SUBOPTIMAL_KHR)
     {
-        g_SwapChainRebuild = true;
+        _swapChainRebuild = true;
         return;
     }
     check_vk_result(err);
     wd->SemaphoreIndex = (wd->SemaphoreIndex + 1) % wd->SemaphoreCount; // Now we can use the next set of semaphores
 }
 
-void GuiManager::CleanupVulkanWindow()
+void FormManager::CleanupVulkanWindow()
 {
-    ImGui_ImplVulkanH_DestroyWindow(g_Instance, g_Device, &g_MainWindowData, g_Allocator);
+    ImGui_ImplVulkanH_DestroyWindow(this->_vkInstance, this->_device, &this->_mainWindowData, this->_allocator);
 }
 
-void GuiManager::CleanupVulkan()
+void FormManager::CleanupVulkan()
 {
-    vkDestroyDescriptorPool(g_Device, g_DescriptorPool, g_Allocator);
+    vkDestroyDescriptorPool(this->_device, this->_descriptorPool, this->_allocator);
 
 #ifdef APP_USE_VULKAN_DEBUG_REPORT
     // Remove the debug report callback
@@ -343,19 +330,21 @@ void GuiManager::CleanupVulkan()
     f_vkDestroyDebugReportCallbackEXT(g_Instance, g_DebugReport, g_Allocator);
 #endif // APP_USE_VULKAN_DEBUG_REPORT
 
-    vkDestroyDevice(g_Device, g_Allocator);
-    vkDestroyInstance(g_Instance, g_Allocator);
+    vkDestroyDevice(this->_device, this->_allocator);
+    vkDestroyInstance(this->_vkInstance, this->_allocator);
 }
 
-GuiManager::GuiManager()
+FormManager::FormManager()
 {
+    this->formPrincipal = new FormPrincipal();
+
     glfwSetErrorCallback(exceptionCallback);
     if (!glfwInit())
         throw new GuiException("Não foi possível inicializar o GLFW");
 
     // Create window with Vulkan context
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    GLFWwindow* window = glfwCreateWindow(1280, 720, "Ultra Mega System", nullptr, nullptr);
+    this->_window = glfwCreateWindow(1280, 720, "Ultra Mega System", nullptr, nullptr);
     if (!glfwVulkanSupported())
         throw new GuiException("Não foi possível inicializar o Vulkan");
 
@@ -368,42 +357,39 @@ GuiManager::GuiManager()
 
     // Create Window Surface
     VkSurfaceKHR surface;
-    VkResult err = glfwCreateWindowSurface(g_Instance, window, g_Allocator, &surface);
+    VkResult err = glfwCreateWindowSurface(this->_vkInstance, this->_window, this->_allocator, &surface);
     check_vk_result(err);
 
     // Create Framebuffers
     int w, h;
-    glfwGetFramebufferSize(window, &w, &h);
-    ImGui_ImplVulkanH_Window* wd = &g_MainWindowData;
-    SetupVulkanWindow(wd, surface, w, h);
+    glfwGetFramebufferSize(this->_window, &w, &h);
+    this->_wd = &_mainWindowData;
+    SetupVulkanWindow(this->_wd, surface, w, h);
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
     //ImGui::StyleColorsLight();
 
     // Setup Platform/Renderer backends
-    ImGui_ImplGlfw_InitForVulkan(window, true);
+    ImGui_ImplGlfw_InitForVulkan(this->_window, true);
     ImGui_ImplVulkan_InitInfo init_info = {};
-    init_info.Instance = g_Instance;
-    init_info.PhysicalDevice = g_PhysicalDevice;
-    init_info.Device = g_Device;
-    init_info.QueueFamily = g_QueueFamily;
-    init_info.Queue = g_Queue;
-    init_info.PipelineCache = g_PipelineCache;
-    init_info.DescriptorPool = g_DescriptorPool;
-    init_info.RenderPass = wd->RenderPass;
+    init_info.Instance = this->_vkInstance;
+    init_info.PhysicalDevice = this->_physicalDevice;
+    init_info.Device = this->_device;
+    init_info.QueueFamily = this->_queueFamily;
+    init_info.Queue = this->_queue;
+    init_info.PipelineCache = this->_pipelineCache;
+    init_info.DescriptorPool = this->_descriptorPool;
+    init_info.RenderPass = this->_wd->RenderPass;
     init_info.Subpass = 0;
-    init_info.MinImageCount = g_MinImageCount;
-    init_info.ImageCount = wd->ImageCount;
+    init_info.MinImageCount = this->_minImageCount;
+    init_info.ImageCount = this->_wd->ImageCount;
     init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-    init_info.Allocator = g_Allocator;
+    init_info.Allocator = this->_allocator;
     init_info.CheckVkResultFn = check_vk_result;
     ImGui_ImplVulkan_Init(&init_info);
 
@@ -422,14 +408,18 @@ GuiManager::GuiManager()
     //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
     //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, nullptr, io.Fonts->GetGlyphRangesJapanese());
     //IM_ASSERT(font != nullptr);
+}
 
+void FormManager::show()
+{
     // Our state
-    bool show_demo_window = true;
-    bool show_another_window = false;
+    // bool show_demo_window = true;
+    // bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    bool showFormPrincipal = true;
 
     // Main loop
-    while (!glfwWindowShouldClose(window))
+    while (!glfwWindowShouldClose(this->_window))
     {
         // Poll and handle events (inputs, window resize, etc.)
         // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
@@ -440,13 +430,13 @@ GuiManager::GuiManager()
 
         // Resize swap chain?
         int fb_width, fb_height;
-        glfwGetFramebufferSize(window, &fb_width, &fb_height);
-        if (fb_width > 0 && fb_height > 0 && (g_SwapChainRebuild || g_MainWindowData.Width != fb_width || g_MainWindowData.Height != fb_height))
+        glfwGetFramebufferSize(this->_window, &fb_width, &fb_height);
+        if (fb_width > 0 && fb_height > 0 && (this->_swapChainRebuild || this->_mainWindowData.Width != fb_width || this->_mainWindowData.Height != fb_height))
         {
-            ImGui_ImplVulkan_SetMinImageCount(g_MinImageCount);
-            ImGui_ImplVulkanH_CreateOrResizeWindow(g_Instance, g_PhysicalDevice, g_Device, &g_MainWindowData, g_QueueFamily, g_Allocator, fb_width, fb_height, g_MinImageCount);
-            g_MainWindowData.FrameIndex = 0;
-            g_SwapChainRebuild = false;
+            ImGui_ImplVulkan_SetMinImageCount(_minImageCount);
+            ImGui_ImplVulkanH_CreateOrResizeWindow(this->_vkInstance, this->_physicalDevice, this->_device, &this->_mainWindowData, this->_queueFamily, this->_allocator, fb_width, fb_height, this->_minImageCount);
+            _mainWindowData.FrameIndex = 0;
+            _swapChainRebuild = false;
         }
 
         // Start the Dear ImGui frame
@@ -454,42 +444,42 @@ GuiManager::GuiManager()
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-        if (show_demo_window)
-            ImGui::ShowDemoWindow(&show_demo_window);
+        this->formPrincipal->render(&showFormPrincipal);
+        // // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
+        // if (show_demo_window)
+        //     ImGui::ShowDemoWindow(&show_demo_window);
 
-        // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
-        {
-            static float f = 0.0f;
-            static int counter = 0;
+        // // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
+        // {
+        //     static float f = 0.0f;
+        //     static int counter = 0;
 
-            ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
+        //     ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
 
-            ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-            ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-            ImGui::Checkbox("Another Window", &show_another_window);
+        //     ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
+        //     ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
+        //     ImGui::Checkbox("Another Window", &show_another_window);
 
-            ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-            ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
+        //     ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+        //     ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
 
-            if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-                counter++;
-            ImGui::SameLine();
-            ImGui::Text("counter = %d", counter);
+        //     if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
+        //         counter++;
+        //     ImGui::SameLine();
+        //     ImGui::Text("counter = %d", counter);
 
-            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-            ImGui::End();
-        }
+        //     ImGui::End();
+        // }
 
-        // 3. Show another simple window.
-        if (show_another_window)
-        {
-            ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
-            ImGui::Text("Hello from another window!");
-            if (ImGui::Button("Close Me"))
-                show_another_window = false;
-            ImGui::End();
-        }
+        // // 3. Show another simple window.
+        // if (show_another_window)
+        // {
+        //     ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
+        //     ImGui::Text("Hello from another window!");
+        //     if (ImGui::Button("Close Me"))
+        //         show_another_window = false;
+        //     ImGui::End();
+        // }
 
         // Rendering
         ImGui::Render();
@@ -497,17 +487,20 @@ GuiManager::GuiManager()
         const bool is_minimized = (draw_data->DisplaySize.x <= 0.0f || draw_data->DisplaySize.y <= 0.0f);
         if (!is_minimized)
         {
-            wd->ClearValue.color.float32[0] = clear_color.x * clear_color.w;
-            wd->ClearValue.color.float32[1] = clear_color.y * clear_color.w;
-            wd->ClearValue.color.float32[2] = clear_color.z * clear_color.w;
-            wd->ClearValue.color.float32[3] = clear_color.w;
-            FrameRender(wd, draw_data);
-            FramePresent(wd);
+            this->_wd->ClearValue.color.float32[0] = clear_color.x * clear_color.w;
+            this->_wd->ClearValue.color.float32[1] = clear_color.y * clear_color.w;
+            this->_wd->ClearValue.color.float32[2] = clear_color.z * clear_color.w;
+            this->_wd->ClearValue.color.float32[3] = clear_color.w;
+            FrameRender(this->_wd, draw_data);
+            FramePresent(this->_wd);
         }
     }
+}
 
+void FormManager::close()
+{
     // Cleanup
-    err = vkDeviceWaitIdle(g_Device);
+    VkResult err = vkDeviceWaitIdle(_device);
     check_vk_result(err);
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
@@ -516,14 +509,14 @@ GuiManager::GuiManager()
     CleanupVulkanWindow();
     CleanupVulkan();
 
-    glfwDestroyWindow(window);
+    glfwDestroyWindow(this->_window);
     glfwTerminate();
 }
 
-GuiManager *GuiManager::getInstance()
+FormManager *FormManager::getInstance()
 {
     if (_instance == nullptr) {
-        _instance = new GuiManager();
+        _instance = new FormManager();
     }
     return _instance;
 }

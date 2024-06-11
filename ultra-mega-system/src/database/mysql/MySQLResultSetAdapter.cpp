@@ -2,7 +2,6 @@
 
 MySQLResultSetAdapter::MySQLResultSetAdapter(sql::ResultSet* res)
 {
-    res->first();
     this->_mySQLResultSet = res;
 }
 
@@ -24,4 +23,9 @@ int MySQLResultSetAdapter::getInt(int anIndex)
 bool MySQLResultSetAdapter::next()
 {
     return this->_mySQLResultSet->next();
+}
+
+int MySQLResultSetAdapter::count()
+{
+    return this->_mySQLResultSet->rowsCount();
 }

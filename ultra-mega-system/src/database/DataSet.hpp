@@ -13,6 +13,7 @@ class DataSet {
         int getInt(int anIndex);
         void populate(ResultSetInterface* res);
         bool next();
+        int count();
 };
 
 #endif

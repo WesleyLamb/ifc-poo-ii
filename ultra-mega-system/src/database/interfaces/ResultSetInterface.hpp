@@ -9,6 +9,7 @@ class ResultSetInterface {
         virtual int getInt(std::string aFieldName) = 0;
         virtual int getInt(int anIndex) = 0;
         virtual bool next() = 0;
+        virtual int count() = 0;
 };
 
 #endif

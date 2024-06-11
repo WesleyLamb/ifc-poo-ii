@@ -23,5 +23,10 @@ void DataSet::populate(ResultSetInterface *res)
 
 bool DataSet::next()
 {
-    return this->_resultSet->next();;
+    return this->_resultSet->next();
+}
+
+int DataSet::count()
+{
+    return this->_resultSet->count();
 }

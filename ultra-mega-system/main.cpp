@@ -6,7 +6,7 @@
 #include "src/database/models/Clientes.hpp"
 #include "src/database/exceptions/IllegalFunctionCallException.hpp"
 
-#include "src/gui/GuiManager.hpp"
+#include "src/gui/FormManager.hpp"
 
 #include <cppconn/driver.h>
 #include <cppconn/exception.h>
@@ -67,7 +67,9 @@ int main() {
         return 1;
     };
 
-    GuiManager::getInstance();
+    FormManager* fm = FormManager::getInstance();
+    fm->show();
+
 
     // dbm->clientes->open("select * from clientes");
     // do {

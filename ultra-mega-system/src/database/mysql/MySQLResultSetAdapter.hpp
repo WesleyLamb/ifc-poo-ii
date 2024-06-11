@@ -14,6 +14,7 @@ class MySQLResultSetAdapter: public ResultSetInterface {
         int getInt(std::string aFieldName);
         int getInt(int anIndex);
         bool next();
+        int count();
 };
 
 #endif
